@@ -1,7 +1,7 @@
 
 import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'
 import User from '../models/User.js'
-export const portectRoute = [
+export const protectRoute = [
     requireAuth(), // This middleware ensures that the user is authenticated
     async (req, res, next) => {
         try {
@@ -18,3 +18,4 @@ export const portectRoute = [
         }
     }   
 ]
+export default protectRoute;

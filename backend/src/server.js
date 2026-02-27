@@ -7,12 +7,14 @@ import { connectDB } from "./lib/db.js"
 import {serve} from "inngest/express"
 import { inngest , functions } from "./lib/inngest.js"  
 import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'// dotenv.config();
+import protectRoute from './middleware/protectRoute.js'
+
 console.log(ENV.PORT) 
 console.log(ENV.DB_URL) 
 
 const app = express();
 const __dirname = path.resolve();
-app.use(clerkMiddelware()); //this add the auth field to request object:req.auth() and to  verify the user is valid or not and add the user data to req object     
+app.use(clerkMiddleware()); //this add the auth field to request object:req.auth() and to  verify the user is valid or not and add the user data to req object     
 app.use("/api/inngest",serve( {client:inngest,functions} ))
  ///  inngest app syncnew  paste your  depolyment URL 
  // middleware  
