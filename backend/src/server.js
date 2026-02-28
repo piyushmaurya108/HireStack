@@ -35,21 +35,21 @@ app.get("/" , (req,res)=>{
  // env production 
 //{ code   ..}
 
-// const startServer = async ()=>{
-//        try{
-//               await connectDB();
+const startServer = async ()=>{
+       try{
+              await connectDB();
 
-//               app.listen(ENV.PORT,()=>{
-//               console.log( "Server running on port:",ENV.PORT)
-//               connectDB();
-//                } )
+              app.listen(ENV.PORT,()=>{
+              console.log( "Server running on port:",ENV.PORT)
+              connectDB();
+               } )
 
-//        }
-//        catch(error){
-//          console.error("Error starting the server " , error);
+       }
+       catch(error){
+         console.error("Error starting the server " , error);
 
-//        }
+       }
 
-// };
-export default serverless(app)
-//startServer();
+};
+//export default serverless(app)
+startServer();
