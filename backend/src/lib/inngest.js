@@ -22,7 +22,7 @@ export const inngest = new Inngest({ id: "HireStack" });
            }
               await User.create(newUser);
               await upsertStreamUser({
-                id: newUser.clerkID.tostring(),
+                id: newUser.clerkID.toString(),
                 name : newUser.name ,
                 image: newUser.profileImage,
 
