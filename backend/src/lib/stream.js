@@ -20,13 +20,13 @@ export const upsertStreamUser = async (userData)=>{
     }
 };
 
-export const deleteStreamUser = async (userData)=>{
+export const deleteStreamUser = async (userId)=>{
     try{
-        await chatClient.upsertUser(userData);
-       console.log("stream user upsert successfully ", userData);
+        await chatClient.deleteUser(userId);
+       console.log("stream user deleted successfully ", userId);
     }
     catch(error){
-       console.error("Error  upserting  the strem user " ,error);
+       console.error("Error  deleting  the strem user " ,error);
     }
 };
   // todo addd another method to generated the toekn 
