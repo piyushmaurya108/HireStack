@@ -2,7 +2,7 @@
 import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'
 import User from '../models/User.js'
 export const protectRoute = [
-    requireAuth(), // This middleware ensures that the user is authenticated
+    requireAuth({signInUrl: '/sign-in'}), // This middleware ensures that the user is authenticated
     async (req, res, next) => {
         try {
            const clerkId = req.auth().userId;

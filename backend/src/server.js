@@ -9,6 +9,7 @@ import { inngest , functions } from "./lib/inngest.js"
 import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'// dotenv.config();
 import protectRoute from './middleware/protectRoute.js'
 import serverless from "serverless-http"
+import  chatRoutes from "./routes/chatRoutes.js";
 console.log(ENV.PORT) 
 console.log(ENV.DB_URL) 
 
@@ -19,7 +20,7 @@ app.use(clerkMiddleware()); //this add the auth field to request object:req.auth
 app.use("/api/inngest",serve( {client:inngest,functions} ))
  ///  inngest app syncnew  paste your  depolyment URL 
  // middleware  
-
+app.use("/api/chat"  , chatRoutes) ;
 app.get("/video-calls" , protectRoute, (req,res)=>{
         res.status(200).json({msg:"video call endpoints"});
 })
