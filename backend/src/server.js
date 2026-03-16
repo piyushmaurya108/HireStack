@@ -10,6 +10,7 @@ import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/expre
 import protectRoute from './middleware/protectRoute.js'
 import serverless from "serverless-http"
 import  chatRoutes from "./routes/chatRoutes.js";
+import sessionRoutes from "./routes/sessionRoutes.js"
 console.log(ENV.PORT) 
 console.log(ENV.DB_URL) 
 
@@ -21,6 +22,7 @@ app.use("/api/inngest",serve( {client:inngest,functions} ))
  ///  inngest app syncnew  paste your  depolyment URL 
  // middleware  
 app.use("/api/chat"  , chatRoutes) ;
+app.use("api/session", sessionRoutes);
 app.get("/video-calls" , protectRoute, (req,res)=>{
         res.status(200).json({msg:"video call endpoints"});
 })
