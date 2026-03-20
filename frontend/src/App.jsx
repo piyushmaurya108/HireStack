@@ -8,23 +8,22 @@ import { Navigate, Route, Router , Routes } from 'react-router'
 import HomePage from './pages/HomePage'
 import AboutPage from './pages/AboutPage'
 import ProblemsPage from './pages/ProblemsPage'
-function App() {
-   
-  
+import DashboardPage from './pages/DashboardPage'
 
-    const {isSignedIn} = useUser() 
+function App() {
+  // <Route path="/"  element= { <HomePage/>} />
+  const {isSignedIn , isLoaded} = useUser() 
+   // this wil remove the flikering effect of the page when the user is
+   // loading and it will check if the user is signed in or not
+  if(!isLoaded) return null ;
 
   return (
     <>
-   
     <Routes>
- 
-    <Route path="/"  element= {<HomePage/>} />
-    <Route path="/about"  element= {<AboutPage/>} /> 
+    <Route path="/"  element= { !isSignedIn?<HomePage/> : <Navigate to={"/dashboard"} /> } />
+    <Route path="/dashboard"  element= { isSignedIn?<DashboardPage/> : <Navigate to={"/"} /> } /> 
     <Route path="/problems"  element= { isSignedIn?<ProblemsPage/> : <Navigate to={"/"} /> } /> 
- 
   
-     
     </Routes>
     <Toaster  toastOptions={{duration:3000}}/>
     </>
