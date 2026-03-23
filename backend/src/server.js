@@ -10,6 +10,7 @@ import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/expre
 import protectRoute from './middleware/protectRoute.js'
 import serverless from "serverless-http"
 import  chatRoutes from "./routes/chatRoutes.js";
+import executeRoute from "./routes/execute.js";
 console.log(ENV.PORT) 
 console.log(ENV.DB_URL) 
 
@@ -28,7 +29,8 @@ app.get("/video-calls" , protectRoute, (req,res)=>{
 
  // credentials:true  mean that server allows browser user to inclue cookies on req 
 app.use( cors({origin:ENV.CLIENT_URL, credentials:true}))
-
+/// code compile piston backend api 
+app.use("/api", executeRoute);
 
 app.get("/" , (req,res)=>{
        res.json({msg:"sucesess fo api "})
