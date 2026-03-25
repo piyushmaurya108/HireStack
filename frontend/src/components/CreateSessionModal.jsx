@@ -1,7 +1,7 @@
-import { Code2Icon, LoaderIcon, PlusIcon } from "lucide-react";
+ import { Code2Icon, LoaderIcon, PlusIcon, XIcon } from "lucide-react";
 import { PROBLEMS } from "../data/problems";
 
-function CreateSessionModal({ 
+function CreateSessionModal({
   isOpen,
   onClose,
   roomConfig,
@@ -14,80 +14,109 @@ function CreateSessionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-2xl">
-        <h3 className="font-bold text-2xl mb-6">Create New Session</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
 
-        <div className="space-y-8">
-          {/* PROBLEM SELECTION */}
-          <div className="space-y-2">
-            <label className="label">
-              <span className="label-text font-semibold">Select Problem</span>
-              <span className="label-text-alt text-error">*</span>
+      {/* MODAL BOX */}
+      <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#0B0F19] p-6 shadow-2xl relative">
+
+        {/* CLOSE BUTTON */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-white/50 hover:text-white transition"
+        >
+          <XIcon size={18} />
+        </button>
+
+        {/* TITLE */}
+        <h3 className="text-2xl font-bold mb-6">
+          Create New Session
+        </h3>
+
+        <div className="space-y-6">
+
+          {/* SELECT */}
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-2">
+              Select Problem <span className="text-red-400">*</span>
             </label>
 
             <select
-              className="select w-full"
+              className="w-full px-4 py-3 rounded-lg bg-white/[0.05] border border-white/10 text-white outline-none focus:border-[#19B8AA] transition"
               value={roomConfig.problem}
               onChange={(e) => {
-                const selectedProblem = problems.find((p) => p.title === e.target.value);
+                const selectedProblem = problems.find(
+                  (p) => p.title === e.target.value
+                );
+
                 setRoomConfig({
                   difficulty: selectedProblem.difficulty,
                   problem: e.target.value,
                 });
               }}
             >
-              <option value="" disabled>
+              <option value="" disabled className="bg-black">
                 Choose a coding problem...
               </option>
 
               {problems.map((problem) => (
-                <option key={problem.id} value={problem.title}>
+                <option key={problem.id} value={problem.title} className="bg-black">
                   {problem.title} ({problem.difficulty})
                 </option>
               ))}
             </select>
           </div>
 
-          {/* ROOM SUMMARY */}
+          {/* SUMMARY */}
           {roomConfig.problem && (
-            <div className="alert alert-success">
-              <Code2Icon className="size-5" />
-              <div>
-                <p className="font-semibold">Room Summary:</p>
-                <p>
-                  Problem: <span className="font-medium">{roomConfig.problem}</span>
+            <div className="flex gap-3 p-4 rounded-lg bg-[#19B8AA]/10 border border-[#19B8AA]/30">
+              <Code2Icon className="size-5 text-[#19B8AA]" />
+
+              <div className="text-sm">
+                <p className="font-semibold text-white mb-1">
+                  Room Summary
                 </p>
-                <p>
-                  Max Participants: <span className="font-medium">2 (1-on-1 session)</span>
+
+                <p className="text-white/70">
+                  Problem: <span className="text-white">{roomConfig.problem}</span>
+                </p>
+
+                <p className="text-white/70">
+                  Max Participants:{" "}
+                  <span className="text-white">2 (1-on-1 session)</span>
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        <div className="modal-action">
-          <button className="btn btn-ghost" onClick={onClose}>
+        {/* ACTIONS */}
+        <div className="flex justify-end gap-3 mt-8">
+
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-lg border border-white/10 text-white/70 hover:bg-white/5 transition"
+          >
             Cancel
           </button>
 
           <button
-            className="btn btn-primary gap-2"
             onClick={onCreateRoom}
             disabled={isCreating || !roomConfig.problem}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#19B8AA] text-black font-medium hover:opacity-90 transition disabled:opacity-50"
           >
             {isCreating ? (
-              <LoaderIcon className="size-5 animate-spin" />
+              <LoaderIcon className="size-4 animate-spin" />
             ) : (
-              <PlusIcon className="size-5" />
+              <PlusIcon className="size-4" />
             )}
 
             {isCreating ? "Creating..." : "Create"}
           </button>
+
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
     </div>
   );
 }
-export default CreateSessionModal; 
+
+export default CreateSessionModal;

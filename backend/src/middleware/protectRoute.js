@@ -10,7 +10,7 @@ export const protectRoute = [
            const user  = await User.findOne({clerkId});
        if(!user ) return res.status(404).json({msg:"User not found "})
          // attach user  to request ;
-         res.user = user ;
+         req.user = user ;
         next();
         } catch (error) {
             console.log("error in portectRoute middelware",error);

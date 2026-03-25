@@ -11,6 +11,8 @@ import protectRoute from './middleware/protectRoute.js'
 import serverless from "serverless-http"
 import  chatRoutes from "./routes/chatRoutes.js";
 import executeRoute from "./routes/execute.js";
+import sessionRoutes from "./routes/sessionRoute.js";
+
 console.log(ENV.PORT) 
 console.log(ENV.DB_URL) 
 
@@ -19,16 +21,16 @@ app.use(express.json())
 const __dirname = path.resolve();
 app.use(clerkMiddleware()); //this add the auth field to request object:req.auth() and to  verify the user is valid or not and add the user data to req object     
 app.use("/api/inngest",serve( {client:inngest,functions} ))
+// credentials:true  mean that server allows browser user to inclue cookies on req 
+app.use( cors({origin:ENV.CLIENT_URL, credentials:true}))
  ///  inngest app syncnew  paste your  depolyment URL 
  // middleware  
 app.use("/api/chat"  , chatRoutes) ;
+app.use("/api/sessions", sessionRoutes);
 app.get("/video-calls" , protectRoute, (req,res)=>{
         res.status(200).json({msg:"video call endpoints"});
 })
-
-
- // credentials:true  mean that server allows browser user to inclue cookies on req 
-app.use( cors({origin:ENV.CLIENT_URL, credentials:true}))
+  
 /// code compile piston backend api 
 app.use("/api", executeRoute);
 
