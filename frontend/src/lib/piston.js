@@ -1,46 +1,40 @@
-// frontend/src/lib/piston.js
 export async function executeCode(language, code) {
-  try {
-    const res = await fetch("/api/execute", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        language,
-        code,
-        input: "",
-      }),
-    });
+  try { 
+    if (language === "javascript") {
+      let output = "";
 
-    if (!res.ok) {
+      // Capture console.log
+      const originalLog = console.log;
+      console.log = (...args) => {
+        output += args.join(" ") + "\n";
+      };
+
+      try {
+        eval(code); // run JS code
+      } catch (err) {
+        return {
+          success: false,
+          error: err.message,
+        };
+      }
+
+      console.log = originalLog;
+
       return {
-        success: false,
-        error: `HTTP error! status: ${res.status}`,
+        success: true,
+        output: output || "No output",
       };
     }
 
-    const data = await res.json();
-
-    const output = data.run.output || "";
-    const stderr = data.run.stderr || "";
-
-    if (stderr) {
-      return {
-        success: false,
-        output: output,
-        error: stderr,
-      };
-    }
-
-    return {
-      success: true,
-      output: output || "No output",
-    };
-  } catch (error) {
     return {
       success: false,
-      error: `Failed to execute code: ${error.message}`,
+      error: "Only JavaScript supported in free mode",
+    };
+
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message,
     };
   }
 }

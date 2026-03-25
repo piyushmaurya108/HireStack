@@ -3,15 +3,15 @@ import { useNavigate, useParams } from "react-router";
 import { PROBLEMS } from "../data/problems";
 import Navbar from "../components/Navbar";
 
-//import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { Panel,Group, Separator } from "react-resizable-panels";
+// ✅ Alias real components to your names
+import { Panel, Group, Separator } from "react-resizable-panels";
+
 import ProblemDescription from "../components/ProblemDescription";
 import OutputPanel from "../components/OutputPanel";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import { executeCode } from "../lib/piston";
 
 import toast from "react-hot-toast";
-import confetti from "canvas-confetti";
 
 function ProblemPage() {
   const { id } = useParams();
@@ -25,7 +25,6 @@ function ProblemPage() {
 
   const currentProblem = PROBLEMS[currentProblemId];
 
-  // update problem when URL param changes
   useEffect(() => {
     if (id && PROBLEMS[id]) {
       setCurrentProblemId(id);
@@ -43,46 +42,9 @@ function ProblemPage() {
 
   const handleProblemChange = (newProblemId) => navigate(`/problem/${newProblemId}`);
 
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 80,
-      spread: 250,
-      origin: { x: 0.2, y: 0.6 },
-    });
-
-    confetti({
-      particleCount: 80,
-      spread: 250,
-      origin: { x: 0.8, y: 0.6 },
-    });
-  };
-
-  const normalizeOutput = (output) => {
-    // normalize output for comparison (trim whitespace, handle different spacing)
-    return output
-      .trim()
-      .split("\n")
-      .map((line) =>
-        line
-          .trim()
-          // remove spaces after [ and before ]
-          .replace(/\[\s+/g, "[")
-          .replace(/\s+\]/g, "]")
-          // normalize spaces around commas to single space after comma
-          .replace(/\s*,\s*/g, ",")
-      )
-      .filter((line) => line.length > 0)
-      .join("\n");
-  };
-
-  const checkIfTestsPassed = (actualOutput, expectedOutput) => {
-    const normalizedActual = normalizeOutput(actualOutput);
-    const normalizedExpected = normalizeOutput(expectedOutput);
-
-    return normalizedActual == normalizedExpected;
-  };
-
   const handleRunCode = async () => {
+    if (isRunning) return;
+
     setIsRunning(true);
     setOutput(null);
 
@@ -90,67 +52,79 @@ function ProblemPage() {
     setOutput(result);
     setIsRunning(false);
 
-    // check if code executed successfully and matches expected output
-
     if (result.success) {
-      const expectedOutput = currentProblem.expectedOutput[selectedLanguage];
-      const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
-
-      if (testsPassed) {
-        triggerConfetti();
-        toast.success("All tests passed! Great job!");
-      } else {
-        toast.error("Tests failed. Check your output!");
-      }
+      toast.success("Code executed successfully");
     } else {
-      toast.error("Code execution failed!");
+      toast.error("Execution failed");
     }
   };
 
   return (
-    <div className="h-screen bg-base-100 flex flex-col">
-      <Navbar />
+<div className="h-screen bg-[#05070D] text-white flex flex-col overflow-hidden">      <Navbar />
 
-      <div className="flex-1">
-        <Group direction="horizontal">
-          {/* left panel- problem desc */}
+      <div className="flex-1 p-4 overflow-hidden">
+       <Group orientation="horizontal">
+
+          {/* LEFT PANEL */}
           <Panel defaultSize={40} minSize={30}>
-            <ProblemDescription
-              problem={currentProblem}
-              currentProblemId={currentProblemId}
-              onProblemChange={handleProblemChange}
-              allProblems={Object.values(PROBLEMS)}
-            />
+            <div className="h-full rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-4 overflow-auto">
+              <ProblemDescription
+                problem={currentProblem}
+                currentProblemId={currentProblemId}
+                onProblemChange={handleProblemChange}
+                allProblems={Object.values(PROBLEMS)}
+              />
+            </div>
           </Panel>
 
-          <Separator className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
+          {/* VERTICAL RESIZER */}
+          <Separator className="w-2 mx-2 bg-white/10 hover:bg-[#19B8AA]/50 transition cursor-col-resize rounded" />
 
-          {/* right panel- code editor & output */}
+          {/* RIGHT SIDE */}
+         
           <Panel defaultSize={60} minSize={30}>
-            <Group direction="vertical">
-              {/* Top panel - Code editor */}
-              <Panel defaultSize={70} minSize={30}>
-                <CodeEditorPanel
-                  selectedLanguage={selectedLanguage}
-                  code={code}
-                  isRunning={isRunning}
-                  onLanguageChange={handleLanguageChange}
-                  onCodeChange={setCode}
-                  onRunCode={handleRunCode}
-                />
+        <Group orientation="vertical">
+              {/* CODE EDITOR */}
+              <Panel defaultSize={65} minSize={40}>
+                <div className="h-full rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm overflow-hidden">
+                  <CodeEditorPanel
+                    selectedLanguage={selectedLanguage}
+                    code={code}
+                    isRunning={isRunning}
+                    onLanguageChange={handleLanguageChange}
+                    onCodeChange={setCode}
+                    onRunCode={handleRunCode}
+                  />
+                </div>
               </Panel>
 
-              <Separator className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
+              {/* HORIZONTAL RESIZER */}
+              <Separator className="h-2 my-2 bg-white/10 hover:bg-[#19B8AA]/50 transition cursor-row-resize rounded" />
 
-              {/* Bottom panel - Output Panel*/}
+              {/* OUTPUT PANEL BELOW */}
+              <Panel defaultSize={35} minSize={20}>
+                <div className="h-full rounded-xl border border-white/10 bg-black/40 backdrop-blur-md p-4 overflow-auto shadow-inner">
 
-              <Panel defaultSize={30} minSize={30}>
-                <OutputPanel output={output} />
+                  {/* HEADER */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-white/70">
+                      Output
+                    </h3>
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 rounded-full bg-[#19B8AA]"></div>
+                      <div className="w-2 h-2 rounded-full bg-[#EF4444]"></div>
+                    </div>
+                  </div>
+
+                  <OutputPanel output={output} />
+                </div>
               </Panel>
+
             </Group>
           </Panel>
+         
         </Group>
-      </div>
+      </div >
     </div>
   );
 }
