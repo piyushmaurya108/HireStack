@@ -2,59 +2,110 @@ import express from "express"
 import path from 'path'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import {ENV} from './lib/env.js'
+import { inngest, functions } from "./lib/inngest.js"  
+import { clerkMiddleware } from '@clerk/express'
+import { serve } from "inngest/express"
+
+// Import environment and database
+import { ENV } from './lib/env.js'
 import { connectDB } from "./lib/db.js"
-import {serve} from "inngest/express"
-import { inngest , functions } from "./lib/inngest.js"  
-import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'// dotenv.config();
-import protectRoute from './middleware/protectRoute.js'
-import serverless from "serverless-http"
-import  chatRoutes from "./routes/chatRoutes.js";
-import executeRoute from "./routes/execute.js";
-import sessionRoutes from "./routes/sessionRoute.js";
 
-console.log(ENV.PORT) 
-console.log(ENV.DB_URL) 
+// Import routes
+import chatRoutes from "./routes/chatRoutes.js"
+import executeRoute from "./routes/execute.js"
+import sessionRoutes from "./routes/sessionRoute.js"
+import  protectRoute from './middleware/protectRoute.js'
 
-const app = express();
+// Check environment variables
+console.log("=== ENVIRONMENT CHECK ===")
+console.log("PORT:", ENV.PORT)
+console.log("DB_URL:", ENV.DB_URL ? "✓ Set" : "✗ Missing")
+console.log("CLIENT_URL:", ENV.CLIENT_URL)
+console.log("========================\n")
+
+const app = express()
+const __dirname = path.resolve()
+
+// ==========================================
+// MIDDLEWARE ORDER (IMPORTANT)
+// ==========================================
+
+// 1. JSON Parser
 app.use(express.json())
-const __dirname = path.resolve();
-app.use(clerkMiddleware()); //this add the auth field to request object:req.auth() and to  verify the user is valid or not and add the user data to req object     
-app.use("/api/inngest",serve( {client:inngest,functions} ))
-// credentials:true  mean that server allows browser user to inclue cookies on req 
-app.use( cors({origin:ENV.CLIENT_URL, credentials:true}))
- ///  inngest app syncnew  paste your  depolyment URL 
- // middleware  
-app.use("/api/chat"  , chatRoutes) ;
-app.use("/api/sessions", sessionRoutes);
-app.get("/video-calls" , protectRoute, (req,res)=>{
-        res.status(200).json({msg:"video call endpoints"});
+
+// 2. Request logging (for debugging)
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`)
+  next()
 })
-  
-/// code compile piston backend api 
-app.use("/api", executeRoute);
 
-app.get("/" , (req,res)=>{
-       res.json({msg:"sucesess fo api "})
+// 3. Clerk Middleware (Authentication)
+app.use(clerkMiddleware())
+
+// 4. CORS Middleware
+app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }))
+
+// ==========================================
+// ROUTES REGISTRATION
+// ==========================================
+
+// Inngest endpoint (must be before other routes)
+app.use("/api/inngest", serve({ client: inngest, functions }))
+
+// API Routes
+app.use("/api/chat", chatRoutes)
+app.use("/api/sessions", sessionRoutes)
+
+// Code execution (Piston API)
+app.use("/api", executeRoute)
+
+// Protected route example
+app.get("/video-calls", protectRoute, (req, res) => {
+  res.status(200).json({ msg: "video call endpoints" })
 })
- // env production 
-//{ code   ..}
 
-const startServer = async ()=>{
-       try{
-              await connectDB();
+// Health check endpoint
+app.get("/", (req, res) => {
+  res.json({ msg: "success api is running" })
+})
 
-              app.listen(ENV.PORT,()=>{
-              console.log( "Server running on port:",ENV.PORT)
-              connectDB();
-               } )
+// ==========================================
+// ERROR HANDLING (Optional but recommended)
+// ==========================================
 
-       }
-       catch(error){
-         console.error("Error starting the server " , error);
+// 404 handler
+app.use((req, res) => {
+  console.error(`404 Not Found: ${req.method} ${req.path}`)
+  res.status(404).json({ message: `Route ${req.path} not found` })
+})
 
-       }
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err)
+  res.status(err.status || 500).json({ 
+    message: err.message || "Internal Server Error" 
+  })
+})
 
-};
-//export default serverless(app)
-startServer();
+// ==========================================
+// START SERVER
+// ==========================================
+
+const startServer = async () => {
+  try {
+    await connectDB()
+
+    app.listen(ENV.PORT, () => {
+      console.log(`\n✓ Server running on http://localhost:${ENV.PORT}`)
+      console.log(`✓ Database connected`)
+      console.log(`✓ CORS enabled for: ${ENV.CLIENT_URL}\n`)
+    })
+  } catch (error) {
+    console.error("Error starting the server:", error.message)
+    process.exit(1)
+  }
+}
+
+startServer()
+
+// export default serverless(app)  // Uncomment if deploying serverless

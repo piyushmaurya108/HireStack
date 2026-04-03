@@ -1,4 +1,4 @@
-
+// 
 import { clerkMiddleware, clerkClient, requireAuth, getAuth } from '@clerk/express'
 import User from '../models/User.js'
 export const protectRoute = [
