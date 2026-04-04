@@ -1,6 +1,11 @@
 import dotenv from 'dotenv'
 dotenv.config({quiet: true});
 
+const clientUrls = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map((url) => url.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 export const ENV = {
 
      PORT : process.env.PORT ,
@@ -12,6 +17,7 @@ export const ENV = {
      STREAM_API_SECRET : process.env.STREAM_API_SECRET ,
      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
      CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
-     CLIENT_URL : process.env.CLIENT_URL
+     CLIENT_URL : process.env.CLIENT_URL,
+     CLIENT_URLS: clientUrls
 
 }
