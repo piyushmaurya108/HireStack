@@ -5,6 +5,7 @@ import { ENV } from "../src/lib/env.js";
 
 let server;
 const allowedOrigins = ENV.CLIENT_URLS;
+const DB_CONNECT_TIMEOUT_MS = 8000;
 
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
@@ -23,9 +24,22 @@ function setCorsHeaders(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
+async function connectDBWithTimeout() {
+  return Promise.race([
+    connectDB(),
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Database connection timed out after ${DB_CONNECT_TIMEOUT_MS}ms`)),
+        DB_CONNECT_TIMEOUT_MS
+      )
+    ),
+  ]);
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
   const pathname = req.url?.split("?")[0];
+  console.log(`[handler] ${req.method} ${pathname}`);
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
@@ -39,7 +53,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectDBWithTimeout();
   } catch (error) {
     console.error("Database connection failed:", error);
     return res.status(503).json({
