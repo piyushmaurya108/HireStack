@@ -12,6 +12,24 @@ import protectRoute from "./middleware/protectRoute.js";
 
 const app = express();
 const allowedOrigins = ENV.CLIENT_URLS;
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/$/, "");
+    const isAllowed = allowedOrigins.some(
+      (allowedOrigin) => allowedOrigin === normalizedOrigin
+    );
+
+    if (isAllowed) return callback(null, true);
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
 
 app.use(express.json());
 
@@ -20,27 +38,12 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
+
 app.use(
   clerkMiddleware({
     authorizedParties: allowedOrigins.length ? allowedOrigins : undefined,
-  })
-);
-
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-
-      const normalizedOrigin = origin.replace(/\/$/, "");
-      const isAllowed = allowedOrigins.some(
-        (allowedOrigin) => allowedOrigin === normalizedOrigin
-      );
-
-      if (isAllowed) return callback(null, true);
-
-      return callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    credentials: true,
   })
 );
 
