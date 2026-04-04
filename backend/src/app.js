@@ -11,11 +11,16 @@ import protectRoute from "./middleware/protectRoute.js";
 
 const app = express();
 const allowedOrigins = ENV.CLIENT_URLS;
+console.log("Allowed origins:", JSON.stringify(allowedOrigins));
 const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
 
     const normalizedOrigin = origin.replace(/\/$/, "");
+    if (allowedOrigins.length === 0) {
+      return callback(null, true);
+    }
+
     const isAllowed = allowedOrigins.some(
       (allowedOrigin) => allowedOrigin === normalizedOrigin
     );

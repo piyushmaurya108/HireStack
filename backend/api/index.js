@@ -38,8 +38,9 @@ async function connectDBWithTimeout() {
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
-  const pathname = req.url?.split("?")[0];
-  console.log(`[handler] ${req.method} ${pathname}`);
+  const requestUrl = req.originalUrl || req.url;
+  const pathname = requestUrl?.split("?")[0];
+  console.log(`[handler] ${req.method} ${pathname} (originalUrl=${req.originalUrl || 'N/A'})`);
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
