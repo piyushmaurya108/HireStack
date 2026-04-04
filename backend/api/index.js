@@ -7,12 +7,29 @@ let server;
 const allowedOrigins = ENV.CLIENT_URLS;
 const DB_CONNECT_TIMEOUT_MS = 8000;
 
+console.log("[startup] Allowed origins:", JSON.stringify(allowedOrigins));
+console.log("[startup] DB_URL configured:", !!ENV.DB_URL);
+console.log("[startup] NODE_ENV:", ENV.NODE_ENV);
+
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin;
   const normalizedOrigin = origin?.replace(/\/$/, "");
 
-  if (normalizedOrigin && allowedOrigins.includes(normalizedOrigin)) {
+  console.log(`[CORS] Request origin: "${origin}" -> normalized: "${normalizedOrigin}"`);
+  console.log(`[CORS] Allowed origins: ${JSON.stringify(allowedOrigins)}`);
+
+  const isAllowed =
+    allowedOrigins.length === 0 ||
+    (normalizedOrigin && allowedOrigins.includes(normalizedOrigin));
+
+  if (isAllowed && normalizedOrigin) {
     res.setHeader("Access-Control-Allow-Origin", normalizedOrigin);
+    console.log(`[CORS] ✓ Origin allowed, setting header`);
+  } else if (allowedOrigins.length === 0) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    console.log(`[CORS] No allowed origins configured; allowing all with *`);
+  } else {
+    console.log(`[CORS] ✗ Origin not in allowed list`);
   }
 
   res.setHeader("Vary", "Origin");

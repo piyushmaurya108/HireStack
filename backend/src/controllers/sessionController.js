@@ -12,24 +12,34 @@ async function attachUsersToSessions(sessions) {
     ),
   ];
 
+  console.log(`[attachUsersToSessions] Looking up ${userIds.length} user IDs`);
+
   if (!userIds.length) {
+    console.log("[attachUsersToSessions] No user IDs to fetch");
     return sessions;
   }
 
-  const users = await User.find({ _id: { $in: userIds } })
-    .select("name profileImage email clerkId")
-    .lean()
-    .maxTimeMS(5000);
+  try {
+    const users = await User.find({ _id: { $in: userIds } })
+      .select("name profileImage email clerkId")
+      .lean()
+      .maxTimeMS(5000);
 
-  const userMap = new Map(users.map((user) => [user._id.toString(), user]));
+    console.log(`[attachUsersToSessions] Found ${users.length} users`);
 
-  return sessions.map((session) => ({
-    ...session,
-    host: session.host ? userMap.get(session.host.toString()) || null : null,
-    participant: session.participant
-      ? userMap.get(session.participant.toString()) || null
-      : null,
-  }));
+    const userMap = new Map(users.map((user) => [user._id.toString(), user]));
+
+    return sessions.map((session) => ({
+      ...session,
+      host: session.host ? userMap.get(session.host.toString()) || null : null,
+      participant: session.participant
+        ? userMap.get(session.participant.toString()) || null
+        : null,
+    }));
+  } catch (error) {
+    console.error("[attachUsersToSessions] Error:", error.message);
+    throw error;
+  }
 }
 
 export async function createSession(req, res) {
@@ -74,17 +84,22 @@ export async function createSession(req, res) {
 
 export async function getActiveSessions(_, res) {
   try {
+    console.log("[getActiveSessions] Starting route handler");
+    
     const plainSessions = await Session.find({ status: "active" })
       .sort({ createdAt: -1 })
       .limit(20)
       .lean()
       .maxTimeMS(5000);
 
+    console.log(`[getActiveSessions] Found ${plainSessions.length} active sessions`);
+
     const hydratedSessions = await attachUsersToSessions(plainSessions);
 
+    console.log("[getActiveSessions] Successfully hydrated sessions");
     res.status(200).json({ sessions: hydratedSessions });
   } catch (error) {
-    console.log("Error in getActiveSessions controller:", error.message);
+    console.error("[getActiveSessions] Error:", error.message, error.stack);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

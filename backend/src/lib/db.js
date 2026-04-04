@@ -12,10 +12,12 @@ export const connectDB  = async()=>{
          }
 
       if (mongoose.connection.readyState === 1) {
+          console.log("[connectDB] Already connected to MongoDB");
           return mongoose.connection
       }
 
       if (!connectionPromise) {
+          console.log("[connectDB] Starting new connection to MongoDB...");
           connectionPromise = mongoose.connect(ENV.DB_URL, {
               serverSelectionTimeoutMS: 5000,
               socketTimeoutMS: 10000,
@@ -24,12 +26,12 @@ export const connectDB  = async()=>{
       }
 
       const conn = await connectionPromise
-      console.log("connected to MongoDB :" , conn.connection.host )
+      console.log("[connectDB] Connected to MongoDB :" , conn.connection.host )
       return conn.connection
     }
     catch(error){
           connectionPromise = null;
-          console.error("Error connection to MongoDB" , error);
+          console.error("[connectDB] Error connection to MongoDB:", error.message);
           throw error
     }
 }
