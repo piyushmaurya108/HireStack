@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import { clerkMiddleware } from "@clerk/express";
 import { serve } from "inngest/express";
 
 import { inngest, functions } from "./lib/inngest.js";
@@ -40,12 +39,6 @@ app.use((req, res, next) => {
 
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
-
-app.use(
-  clerkMiddleware({
-    authorizedParties: allowedOrigins.length ? allowedOrigins : undefined,
-  })
-);
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);

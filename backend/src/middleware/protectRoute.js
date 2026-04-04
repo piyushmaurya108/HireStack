@@ -1,26 +1,34 @@
-import { getAuth } from '@clerk/express'
+import { clerkMiddleware, getAuth } from '@clerk/express'
+import { ENV } from '../lib/env.js'
 import User from '../models/User.js'
 
-export const protectRoute = async (req, res, next) => {
-    try {
-        const { userId } = getAuth(req);
+const allowedOrigins = ENV.CLIENT_URLS;
 
-        if (!userId) {
-            return res.status(401).json({ message: "Unauthorized" });
+export const protectRoute = [
+    clerkMiddleware({
+        authorizedParties: allowedOrigins.length ? allowedOrigins : undefined,
+    }),
+    async (req, res, next) => {
+        try {
+            const { userId } = getAuth(req);
+
+            if (!userId) {
+                return res.status(401).json({ message: "Unauthorized" });
+            }
+
+            const user = await User.findOne({ clerkId: userId });
+
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            req.user = user;
+            next();
+        } catch (error) {
+            console.log("error in protectRoute middleware", error);
+            res.status(500).json({ message: "Internal server error" });
         }
-
-        const user = await User.findOne({ clerkId: userId });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        req.user = user;
-        next();
-    } catch (error) {
-        console.log("error in protectRoute middleware", error);
-        res.status(500).json({ message: "Internal server error" });
     }
-}
+]
 
 export default protectRoute;
