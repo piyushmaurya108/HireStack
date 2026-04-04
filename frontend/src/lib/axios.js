@@ -3,8 +3,7 @@ import axios from "axios"
 let tokenGetter = async () => null;
 
 const axionInastance = axios.create({
-    baseURL : import.meta.env.VITE_API_URL ,
-    withCredentials:true
+    baseURL : import.meta.env.VITE_API_URL
 })
 
 axionInastance.interceptors.request.use(async (config) => {

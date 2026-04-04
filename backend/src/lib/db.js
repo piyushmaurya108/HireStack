@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import {ENV} from './env.js'
 
 let connectionPromise = null;
+mongoose.set("bufferCommands", false);
 
 export const connectDB  = async()=>{
     try {
@@ -15,7 +16,11 @@ export const connectDB  = async()=>{
       }
 
       if (!connectionPromise) {
-          connectionPromise = mongoose.connect(ENV.DB_URL)
+          connectionPromise = mongoose.connect(ENV.DB_URL, {
+              serverSelectionTimeoutMS: 5000,
+              socketTimeoutMS: 10000,
+              family: 4,
+          })
       }
 
       const conn = await connectionPromise
@@ -25,6 +30,6 @@ export const connectDB  = async()=>{
     catch(error){
           connectionPromise = null;
           console.error("Error connection to MongoDB" , error);
-          process.exit(1);//0 succes ,1 means failure  
+          throw error
     }
 }

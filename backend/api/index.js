@@ -25,12 +25,28 @@ function setCorsHeaders(req, res) {
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
+  const pathname = req.url?.split("?")[0];
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
 
-  await connectDB();
+  if (pathname === "/" || pathname === "/api/health") {
+    return res.status(200).json({
+      ok: true,
+      message: "HireStack backend is reachable",
+    });
+  }
+
+  try {
+    await connectDB();
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    return res.status(503).json({
+      message: "Database connection failed",
+      error: error.message,
+    });
+  }
 
   if (!server) {
     server = serverless(app);
