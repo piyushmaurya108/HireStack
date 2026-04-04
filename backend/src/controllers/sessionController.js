@@ -1,6 +1,36 @@
 
 import { chatClient, streamClient } from "../lib/stream.js";
 import Session from "../models/Session.js";
+import User from "../models/User.js";
+
+async function attachUsersToSessions(sessions) {
+  const userIds = [
+    ...new Set(
+      sessions
+        .flatMap((session) => [session.host, session.participant].filter(Boolean))
+        .map((id) => id.toString())
+    ),
+  ];
+
+  if (!userIds.length) {
+    return sessions;
+  }
+
+  const users = await User.find({ _id: { $in: userIds } })
+    .select("name profileImage email clerkId")
+    .lean()
+    .maxTimeMS(5000);
+
+  const userMap = new Map(users.map((user) => [user._id.toString(), user]));
+
+  return sessions.map((session) => ({
+    ...session,
+    host: session.host ? userMap.get(session.host.toString()) || null : null,
+    participant: session.participant
+      ? userMap.get(session.participant.toString()) || null
+      : null,
+  }));
+}
 
 export async function createSession(req, res) {
   try {
@@ -44,13 +74,15 @@ export async function createSession(req, res) {
 
 export async function getActiveSessions(_, res) {
   try {
-    const sessions = await Session.find({ status: "active" })
-      .populate("host", "name profileImage email clerkId")
-      .populate("participant", "name profileImage email clerkId")
+    const plainSessions = await Session.find({ status: "active" })
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(20)
+      .lean()
+      .maxTimeMS(5000);
 
-    res.status(200).json({ sessions });
+    const hydratedSessions = await attachUsersToSessions(plainSessions);
+
+    res.status(200).json({ sessions: hydratedSessions });
   } catch (error) {
     console.log("Error in getActiveSessions controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -67,9 +99,13 @@ export async function getMyRecentSessions(req, res) {
       $or: [{ host: userId }, { participant: userId }],
     })
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(20)
+      .lean()
+      .maxTimeMS(5000);
 
-    res.status(200).json({ sessions });
+    const hydratedSessions = await attachUsersToSessions(sessions);
+
+    res.status(200).json({ sessions: hydratedSessions });
   } catch (error) {
     console.log("Error in getMyRecentSessions controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
