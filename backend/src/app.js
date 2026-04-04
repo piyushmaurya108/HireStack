@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors";
+// import cors from "cors";
 import { serve } from "inngest/express";
 
 import { inngest, functions } from "./lib/inngest.js";
@@ -12,6 +12,8 @@ import protectRoute from "./middleware/protectRoute.js";
 const app = express();
 const allowedOrigins = ENV.CLIENT_URLS;
 console.log("Allowed origins:", JSON.stringify(allowedOrigins));
+// CORS options removed - handled at serverless level
+/*
 const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
@@ -34,6 +36,7 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 204,
 };
+*/
 
 app.use(express.json());
 
@@ -42,8 +45,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors(corsOptions));
-app.options(/(.*)/, cors(corsOptions));
+// CORS is handled at the serverless level in api/index.js
+// app.use(cors(corsOptions));
+// app.options(/(.*)/, cors(corsOptions));
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);

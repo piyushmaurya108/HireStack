@@ -58,12 +58,15 @@ export default async function handler(req, res) {
   const requestUrl = req.originalUrl || req.url;
   const pathname = requestUrl?.split("?")[0];
   console.log(`[handler] ${req.method} ${pathname} (originalUrl=${req.originalUrl || 'N/A'})`);
+  console.log(`[handler] Full URL: ${req.url}, Headers:`, JSON.stringify(req.headers, null, 2));
 
   if (req.method === "OPTIONS") {
+    console.log(`[handler] Handling OPTIONS preflight for ${pathname}`);
     return res.status(204).end();
   }
 
   if (pathname === "/" || pathname === "/api/health") {
+    console.log(`[handler] Handling health check`);
     return res.status(200).json({
       ok: true,
       message: "HireStack backend is reachable",
@@ -71,9 +74,11 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log(`[handler] Connecting to database...`);
     await connectDBWithTimeout();
+    console.log(`[handler] Database connected, proceeding to Express app`);
   } catch (error) {
-    console.error("Database connection failed:", error);
+    console.error("[handler] Database connection failed:", error);
     return res.status(503).json({
       message: "Database connection failed",
       error: error.message,
@@ -81,8 +86,10 @@ export default async function handler(req, res) {
   }
 
   if (!server) {
+    console.log(`[handler] Creating serverless wrapper`);
     server = serverless(app);
   }
 
+  console.log(`[handler] Passing request to Express app`);
   return server(req, res);
 }
