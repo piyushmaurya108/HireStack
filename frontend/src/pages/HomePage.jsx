@@ -2,12 +2,59 @@ import React from "react";
 import { Link } from "react-router"; 
 import { 
   ArrowRightIcon,
+  BracesIcon,
   Code2Icon,
+  DatabaseIcon,
+  LaptopMinimalIcon,
+  SparklesIcon,
+  TerminalSquareIcon,
   UsersIcon,
   VideoIcon,
   ZapIcon,
 } from "lucide-react";
 import { SignInButton } from "@clerk/clerk-react";
+
+const floatingBadges = [
+  {
+    label: "JavaScript",
+    icon: "/javascript.png",
+    className: "left-[-18px] top-[44px] md:left-[-28px]",
+    animation: "float 6s ease-in-out infinite",
+  },
+  {
+    label: "Python",
+    icon: "/python.png",
+    className: "right-[-16px] top-[96px] md:right-[-26px]",
+    animation: "float 7s ease-in-out infinite 0.8s",
+  },
+  {
+    label: "Java",
+    icon: "/java.png",
+    className: "left-[20px] bottom-[48px] md:left-[36px]",
+    animation: "float 6.5s ease-in-out infinite 1.2s",
+  },
+];
+
+const stackBadges = [
+  {
+    label: "React",
+    icon: SparklesIcon,
+    className: "right-[8%] top-[8%]",
+    animation: "drift 8s ease-in-out infinite",
+  },
+  {
+    label: "SQL",
+    icon: DatabaseIcon,
+    className: "right-[10%] bottom-[14%]",
+    animation: "drift 7.5s ease-in-out infinite 1s",
+  },
+  {
+    label: "DSA",
+    icon: BracesIcon,
+    className: "left-[8%] top-[14%]",
+    animation: "drift 9s ease-in-out infinite 1.5s",
+  },
+];
 
 const HomePage = () => {
   return (
@@ -76,11 +123,139 @@ const HomePage = () => {
         <div className="relative">
           <div className="absolute inset-0 bg-[#19B8AA]/10 blur-3xl"></div>
 
-          <img
-            src="https://images.unsplash.com/photo-1669023414162-8b0573b9c6b2?q=80&w=1932&auto=format&fit=crop"
-            alt="platform"
-            className="relative rounded-xl border border-white/10 shadow-2xl"
-          />
+          <div className="relative mx-auto w-full max-w-[560px]">
+            <div className="absolute inset-0 rounded-[36px] bg-gradient-to-br from-[#5796FC]/25 via-transparent to-[#19B8AA]/20 blur-2xl"></div>
+
+            {floatingBadges.map((badge) => (
+              <div
+                key={badge.label}
+                className={`absolute z-20 hidden rounded-2xl border border-white/12 bg-[#0F1421]/90 px-4 py-3 shadow-[0_18px_45px_rgba(0,0,0,0.35)] backdrop-blur-md md:flex items-center gap-3 ${badge.className}`}
+                style={{ animation: badge.animation }}
+              >
+                <img src={badge.icon} alt={badge.label} className="h-8 w-8 rounded-md object-contain" />
+                <div>
+                  <p className="text-sm font-semibold text-white">{badge.label}</p>
+                  <p className="text-xs text-white/45">Live interviews</p>
+                </div>
+              </div>
+            ))}
+
+            {stackBadges.map((badge) => {
+              const Icon = badge.icon;
+
+              return (
+                <div
+                  key={badge.label}
+                  className={`absolute z-10 hidden rounded-full border border-white/10 bg-white/6 px-3 py-2 text-sm text-white/80 backdrop-blur md:flex items-center gap-2 ${badge.className}`}
+                  style={{ animation: badge.animation }}
+                >
+                  <Icon size={16} className="text-[#19B8AA]" />
+                  <span>{badge.label}</span>
+                </div>
+              );
+            })}
+
+            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#0B101B] p-4 shadow-2xl">
+              <div className="rounded-[26px] border border-white/8 bg-gradient-to-br from-[#10182A] via-[#0B101B] to-[#080B13] p-4">
+                <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]"></span>
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]"></span>
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]"></span>
+                    </div>
+                    <span className="text-sm text-white/55">hirestack-session.tsx</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-[#5796FC]/20 bg-[#5796FC]/10 px-3 py-1 text-xs font-medium text-[#8FB7FF]">
+                    <LaptopMinimalIcon size={14} />
+                    Interview Live
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                  <div className="rounded-[24px] border border-white/8 bg-[#0A0F19] p-5">
+                    <div className="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[#19B8AA]">
+                      <TerminalSquareIcon size={15} />
+                      Collaborative Editor
+                    </div>
+
+                    <div className="space-y-3 font-mono text-sm">
+                      <div className="text-white/35">
+                        <span className="mr-4">01</span>
+                        <span className="text-[#7AA2F7]">const</span>{" "}
+                        <span className="text-white">candidate</span>{" "}
+                        <span className="text-white/45">=</span>{" "}
+                        <span className="text-[#9ECE6A]">"ready"</span>
+                      </div>
+                      <div className="text-white/35">
+                        <span className="mr-4">02</span>
+                        <span className="text-[#7AA2F7]">function</span>{" "}
+                        <span className="text-[#E0AF68]">solve</span>
+                        <span className="text-white">(</span>
+                        <span className="text-[#F7768E]">nums</span>
+                        <span className="text-white">)</span>{" "}
+                        <span className="text-white/45">{`{`}</span>
+                      </div>
+                      <div className="text-white/35">
+                        <span className="mr-4">03</span>
+                        <span className="ml-6 text-[#7DCFFF]">return</span>{" "}
+                        <span className="text-white">nums</span>
+                        <span className="text-white/45">.</span>
+                        <span className="text-[#E0AF68]">filter</span>
+                        <span className="text-white">(</span>
+                        <span className="text-white">Boolean</span>
+                        <span className="text-white">)</span>
+                      </div>
+                      <div className="text-white/35">
+                        <span className="mr-4">04</span>
+                        <span className="text-white/45">{`}`}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-[24px] border border-white/8 bg-white/[0.04] p-5">
+                      <p className="mb-3 text-xs uppercase tracking-[0.24em] text-white/40">
+                        Session Stats
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-2xl bg-[#5796FC]/10 p-4">
+                          <p className="text-xs text-white/50">Latency</p>
+                          <p className="mt-2 text-2xl font-semibold text-white">42ms</p>
+                        </div>
+                        <div className="rounded-2xl bg-[#19B8AA]/10 p-4">
+                          <p className="text-xs text-white/50">Room Sync</p>
+                          <p className="mt-2 text-2xl font-semibold text-white">99%</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[24px] border border-white/8 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-5">
+                      <p className="text-xs uppercase tracking-[0.24em] text-white/40">
+                        Language Stack
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#0D1320] px-3 py-2">
+                          <img src="/javascript.png" alt="JavaScript" className="h-5 w-5" />
+                          <span className="text-sm text-white/85">JavaScript</span>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#0D1320] px-3 py-2">
+                          <img src="/python.png" alt="Python" className="h-5 w-5" />
+                          <span className="text-sm text-white/85">Python</span>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#0D1320] px-3 py-2">
+                          <img src="/java.png" alt="Java" className="h-5 w-5" />
+                          <span className="text-sm text-white/85">Java</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mx-auto mt-5 h-3 w-[62%] rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
