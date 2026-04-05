@@ -4,7 +4,7 @@ import { connectDB } from "../src/lib/db.js";
 import { ENV } from "../src/lib/env.js";
 
 let server;
-const allowedOrigins = ENV.CLIENT_URLS;
+const allowedOrigins ='*';
 const DB_CONNECT_TIMEOUT_MS = 8000;
 
 console.log("[startup] Allowed origins:", JSON.stringify(allowedOrigins));
