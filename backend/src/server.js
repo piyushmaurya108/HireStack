@@ -2,7 +2,7 @@ import express from "express"
 import path from 'path'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { inngest, functions } from "./lib/inngest.js"  
+import { inngest, functions } from "./lib/inngest.js"
 import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express"
 
@@ -14,7 +14,7 @@ import { connectDB } from "./lib/db.js"
 import chatRoutes from "./routes/chatRoutes.js"
 import executeRoute from "./routes/execute.js"
 import sessionRoutes from "./routes/sessionRoute.js"
-import  protectRoute from './middleware/protectRoute.js'
+import protectRoute from './middleware/protectRoute.js'
 
 // Check environment variables
 console.log("=== ENVIRONMENT CHECK ===")
@@ -43,8 +43,7 @@ app.use((req, res, next) => {
 app.use(clerkMiddleware())
 
 // 4. CORS Middleware
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }))
-
+app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
 // ==========================================
 // ROUTES REGISTRATION
 // ==========================================
@@ -82,8 +81,8 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error("Server Error:", err)
-  res.status(err.status || 500).json({ 
-    message: err.message || "Internal Server Error" 
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error"
   })
 })
 

@@ -2,7 +2,7 @@ import { clerkMiddleware, getAuth } from '@clerk/express'
 import { ENV } from '../lib/env.js'
 import User from '../models/User.js'
 
-const allowedOrigins = ENV.CLIENT_URLS;
+const allowedOrigins = ENV.CLIENT_URL;
 
 export const protectRoute = [
     clerkMiddleware({
