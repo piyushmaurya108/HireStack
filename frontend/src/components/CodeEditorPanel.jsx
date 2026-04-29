@@ -5,6 +5,7 @@ import { LANGUAGE_CONFIG } from "../data/problems";
 function CodeEditorPanel({
   selectedLanguage,
   code,
+  isCandidate,
   isRunning,
   onLanguageChange,
   onCodeChange,
@@ -19,7 +20,12 @@ function CodeEditorPanel({
             alt={LANGUAGE_CONFIG[selectedLanguage].name}
             className="size-6"
           />
-          <select className="select select-sm" value={selectedLanguage} onChange={onLanguageChange}>
+          <select
+            className="select select-sm"
+            value={selectedLanguage}
+            onChange={onLanguageChange}
+            disabled={!isCandidate}
+          >
             {Object.entries(LANGUAGE_CONFIG).map(([key, lang]) => (
               <option key={key} value={key}>
                 {lang.name}
@@ -28,7 +34,11 @@ function CodeEditorPanel({
           </select>
         </div>
 
-        <button className="btn btn-primary btn-sm gap-2" disabled={isRunning} onClick={onRunCode}>
+        <button
+          className="btn btn-primary btn-sm gap-2"
+          disabled={!isCandidate || isRunning}
+          onClick={onRunCode}
+        >
           {isRunning ? (
             <>
               <Loader2Icon className="size-4 animate-spin" />
@@ -48,7 +58,7 @@ function CodeEditorPanel({
           height={"100%"}
           language={LANGUAGE_CONFIG[selectedLanguage].monacoLang}
           value={code}
-          onChange={onCodeChange}
+          onChange={(value) => onCodeChange(value ?? "")}
           theme="vs-dark"
           options={{
             fontSize: 16,
@@ -56,6 +66,7 @@ function CodeEditorPanel({
             scrollBeyondLastLine: false,
             automaticLayout: true,
             minimap: { enabled: false },
+            readOnly: !isCandidate,
           }}
         />
       </div>

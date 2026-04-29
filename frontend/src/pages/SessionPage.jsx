@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   useEndSession,
@@ -18,6 +18,7 @@ import OutputPanel from "../components/OutputPanel";
 import useStreamClient from "../hooks/useStreamClient";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI";
+import { createSessionSocket } from "../lib/socket";
 
 function SessionPage() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ function SessionPage() {
   const session = sessionData?.session;
   const isHost = session?.host?.clerkId === user?.id;
   const isParticipant = session?.participant?.clerkId === user?.id;
+  const isCandidate = isParticipant && !isHost;
 
   const { call, channel, chatClient, isInitializingCall, streamClient } =
     useStreamClient(session, loadingSession, isHost, isParticipant);
@@ -44,6 +46,9 @@ function SessionPage() {
     ? Object.values(PROBLEMS).find((p) => p.title === session.problem)
     : null;
 
+  const socketRef = useRef(null);
+  const debounceTimeoutRef = useRef(null);
+  const skipNextEmitRef = useRef(false);
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState("");
 
@@ -64,6 +69,51 @@ function SessionPage() {
       setCode(problemData.starterCode[selectedLanguage]);
     }
   }, [problemData, selectedLanguage]);
+
+  useEffect(() => {
+    if (!session?._id || (!isHost && !isParticipant)) return;
+
+    const socket = createSessionSocket();
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      socket.emit("join-session", { sessionId: session._id });
+    });
+
+    socket.on("code-update", ({ code: nextCode }) => {
+      if (typeof nextCode !== "string") return;
+
+      skipNextEmitRef.current = true;
+      setCode(nextCode);
+    });
+
+    return () => {
+      clearTimeout(debounceTimeoutRef.current);
+      socket.disconnect();
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
+    };
+  }, [session?._id, isHost, isParticipant]);
+
+  useEffect(() => {
+    if (!isCandidate || !session?._id) return;
+
+    if (skipNextEmitRef.current) {
+      skipNextEmitRef.current = false;
+      return;
+    }
+
+    clearTimeout(debounceTimeoutRef.current);
+    debounceTimeoutRef.current = setTimeout(() => {
+      socketRef.current?.emit("code-change", {
+        sessionId: session._id,
+        code,
+      });
+    }, 300);
+
+    return () => clearTimeout(debounceTimeoutRef.current);
+  }, [code, isCandidate, session?._id]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -160,6 +210,7 @@ function SessionPage() {
                       <CodeEditorPanel
                         selectedLanguage={selectedLanguage}
                         code={code}
+                        isCandidate={isCandidate}
                         isRunning={isRunning}
                         onLanguageChange={handleLanguageChange}
                         onCodeChange={setCode}

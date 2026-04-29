@@ -1,7 +1,9 @@
 import express from "express"
+import { createServer } from "http"
 import path from 'path'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import { Server } from "socket.io"
 import { inngest, functions } from "./lib/inngest.js"  
 import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express"
@@ -24,7 +26,9 @@ console.log("CLIENT_URL:", ENV.CLIENT_URL)
 console.log("========================\n")
 
 const app = express()
+const httpServer = createServer(app)
 const __dirname = path.resolve()
+const sessionCodeStore = new Map()
 
 // ==========================================
 // MIDDLEWARE ORDER (IMPORTANT)
@@ -44,6 +48,33 @@ app.use(clerkMiddleware())
 
 // 4. CORS Middleware
 app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }))
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+  },
+})
+
+io.on("connection", (socket) => {
+  socket.on("join-session", ({ sessionId }) => {
+    if (!sessionId) return
+
+    socket.join(sessionId)
+
+    const currentCode = sessionCodeStore.get(sessionId)
+    if (typeof currentCode === "string") {
+      socket.emit("code-update", { code: currentCode })
+    }
+  })
+
+  socket.on("code-change", ({ sessionId, code }) => {
+    if (!sessionId || typeof code !== "string") return
+
+    sessionCodeStore.set(sessionId, code)
+    socket.to(sessionId).emit("code-update", { code })
+  })
+})
 
 // ==========================================
 // ROUTES REGISTRATION
@@ -95,7 +126,7 @@ const startServer = async () => {
   try {
     await connectDB()
 
-    app.listen(ENV.PORT, () => {
+    httpServer.listen(ENV.PORT, () => {
       console.log(`\n✓ Server running on http://localhost:${ENV.PORT}`)
       console.log(`✓ Database connected`)
       console.log(`✓ CORS enabled for: ${ENV.CLIENT_URL}\n`)
