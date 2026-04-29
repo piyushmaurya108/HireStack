@@ -37,7 +37,7 @@ function SessionPage() {
   const session = sessionData?.session;
   const isHost = session?.host?.clerkId === user?.id;
   const isParticipant = session?.participant?.clerkId === user?.id;
-  const isCandidate = isParticipant && !isHost;
+  const canEdit = isHost || isParticipant;
 
   const { call, channel, chatClient, isInitializingCall, streamClient } =
     useStreamClient(session, loadingSession, isHost, isParticipant);
@@ -97,7 +97,7 @@ function SessionPage() {
   }, [session?._id, isHost, isParticipant]);
 
   useEffect(() => {
-    if (!isCandidate || !session?._id) return;
+    if (!canEdit || !session?._id) return;
 
     if (skipNextEmitRef.current) {
       skipNextEmitRef.current = false;
@@ -113,7 +113,7 @@ function SessionPage() {
     }, 300);
 
     return () => clearTimeout(debounceTimeoutRef.current);
-  }, [code, isCandidate, session?._id]);
+  }, [code, canEdit, session?._id]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -210,7 +210,7 @@ function SessionPage() {
                       <CodeEditorPanel
                         selectedLanguage={selectedLanguage}
                         code={code}
-                        isCandidate={isCandidate}
+                        canEdit={canEdit}
                         isRunning={isRunning}
                         onLanguageChange={handleLanguageChange}
                         onCodeChange={setCode}

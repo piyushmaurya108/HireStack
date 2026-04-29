@@ -5,7 +5,7 @@ import { LANGUAGE_CONFIG } from "../data/problems";
 function CodeEditorPanel({
   selectedLanguage,
   code,
-  isCandidate,
+  canEdit,
   isRunning,
   onLanguageChange,
   onCodeChange,
@@ -24,7 +24,7 @@ function CodeEditorPanel({
             className="select select-sm"
             value={selectedLanguage}
             onChange={onLanguageChange}
-            disabled={!isCandidate}
+            disabled={!canEdit}
           >
             {Object.entries(LANGUAGE_CONFIG).map(([key, lang]) => (
               <option key={key} value={key}>
@@ -36,7 +36,7 @@ function CodeEditorPanel({
 
         <button
           className="btn btn-primary btn-sm gap-2"
-          disabled={!isCandidate || isRunning}
+          disabled={!canEdit || isRunning}
           onClick={onRunCode}
         >
           {isRunning ? (
@@ -66,7 +66,7 @@ function CodeEditorPanel({
             scrollBeyondLastLine: false,
             automaticLayout: true,
             minimap: { enabled: false },
-            readOnly: !isCandidate,
+            readOnly: !canEdit,
           }}
         />
       </div>
