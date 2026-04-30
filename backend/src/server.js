@@ -29,18 +29,6 @@ const app = express()
 const httpServer = createServer(app)
 const __dirname = path.resolve()
 const sessionCodeStore = new Map()
-const allowedOrigin = ENV.CLIENT_URL?.replace(/\/+$/, "")
-const corsOptions = {
-  origin(origin, callback) {
-    if (!origin || origin.replace(/\/+$/, "") === allowedOrigin) {
-      callback(null, true)
-      return
-    }
-
-    callback(new Error(`CORS blocked for origin: ${origin}`))
-  },
-  credentials: true,
-}
 
 // ==========================================
 // MIDDLEWARE ORDER (IMPORTANT)
@@ -59,17 +47,16 @@ app.use((req, res, next) => {
 app.use(clerkMiddleware())
 
 // 4. CORS Middleware
-app.use(cors(corsOptions))
-app.options(/.*/, cors(corsOptions))
+app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }))
 
 const io = new Server(httpServer, {
-  cors: corsOptions,
-  path: "/socket.io",
+  cors: {
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+  },
 })
 
 io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`)
-
   socket.on("join-session", ({ sessionId }) => {
     if (!sessionId) return
 
@@ -86,10 +73,6 @@ io.on("connection", (socket) => {
 
     sessionCodeStore.set(sessionId, code)
     socket.to(sessionId).emit("code-update", { code })
-  })
-
-  socket.on("disconnect", (reason) => {
-    console.log(`Socket disconnected: ${socket.id} (${reason})`)
   })
 })
 
