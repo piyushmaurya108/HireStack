@@ -1,8 +1,8 @@
 import dotenv from 'dotenv'
 dotenv.config({quiet: true});
 
-export const ENV = {
 
+export const ENV = {
      PORT : process.env.PORT ,
      DB_URL : process.env.DB_URL,
      NODE_ENV: process.env.NODE_ENV ,
@@ -12,6 +12,11 @@ export const ENV = {
      STREAM_API_SECRET : process.env.STREAM_API_SECRET ,
      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
      CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
-     CLIENT_URL : process.env.CLIENT_URL
-
+     CLIENT_URL : process.env.CLIENT_URL,
+     
+     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+     MAX_RESUME_FILE_SIZE : process.env.MAX_RESUME_FILE_SIZE 
 }

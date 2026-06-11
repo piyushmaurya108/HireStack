@@ -7,7 +7,7 @@ import { Server } from "socket.io"
 import { inngest, functions } from "./lib/inngest.js"  
 import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express"
-
+import mockInterviewRoutes from "./routes/mockInterviewRoutes.js";
 // Import environment and database
 import { ENV } from './lib/env.js'
 import { connectDB } from "./lib/db.js"
@@ -89,7 +89,7 @@ app.use("/api/sessions", sessionRoutes)
 
 // Code execution (Piston API)
 app.use("/api", executeRoute)
-
+app.use("/api/mock", mockInterviewRoutes);
 // Protected route example
 app.get("/video-calls", protectRoute, (req, res) => {
   res.status(200).json({ msg: "video call endpoints" })
