@@ -1,36 +1,89 @@
 import fs from "fs";
-import pdfParse from "pdf-parse";
+import PDFParser from "pdf2json";
 import mammoth from "mammoth";
+
+/**
+ * Extract text from PDF using pdf2json
+ */
+async function extractPdfText(filePath) {
+  return new Promise((resolve, reject) => {
+    const pdfParser = new PDFParser();
+
+    pdfParser.on(
+      "pdfParser_dataError",
+      (errData) => {
+        reject(errData.parserError);
+      }
+    );
+
+    pdfParser.on(
+      "pdfParser_dataReady",
+      (pdfData) => {
+        try {
+          let text = "";
+
+          pdfData.Pages.forEach((page) => {
+            page.Texts.forEach((textItem) => {
+              textItem.R.forEach((run) => {
+                text +=
+                  decodeURIComponent(run.T) +
+                  " ";
+              });
+            });
+
+            text += "\n";
+          });
+
+          resolve(text);
+        } catch (error) {
+          reject(error);
+        }
+      }
+    );
+
+    pdfParser.loadPDF(filePath);
+  });
+}
 
 /**
  * Extract raw text from uploaded resume
  * Supports PDF and DOCX
  */
-export async function extractResumeText(filePath, fileType) {
+export async function extractResumeText(
+  filePath,
+  fileType
+) {
   try {
     let extractedText = "";
 
     if (fileType === "pdf") {
-      const buffer = fs.readFileSync(filePath);
-
-      const pdfData = await pdfParse(buffer);
-
-      extractedText = pdfData.text;
+      extractedText =
+        await extractPdfText(filePath);
     } else if (fileType === "docx") {
-      const result = await mammoth.extractRawText({
-        path: filePath,
-      });
+      const result =
+        await mammoth.extractRawText({
+          path: filePath,
+        });
 
       extractedText = result.value;
     } else {
-      throw new Error("Unsupported file format");
+      throw new Error(
+        "Unsupported file format"
+      );
     }
 
-    return cleanResumeText(extractedText);
+    return cleanResumeText(
+      extractedText
+    );
   } catch (error) {
-    console.error("Resume extraction error:", error);
+    console.error(
+      "Resume extraction error:",
+      error
+    );
 
-    throw new Error("Failed to extract resume text");
+    throw new Error(
+      "Failed to extract resume text"
+    );
   }
 }
 
@@ -50,10 +103,12 @@ export function cleanResumeText(text) {
 
 /**
  * Extract simple metadata before Gemini analysis
- * Gemini will do the actual intelligent parsing later.
  */
-export function parseResumeMetadata(text) {
-  const lowerText = text.toLowerCase();
+export function parseResumeMetadata(
+  text
+) {
+  const lowerText =
+    text.toLowerCase();
 
   const commonSkills = [
     "c",
@@ -88,9 +143,12 @@ export function parseResumeMetadata(text) {
     "firebase",
   ];
 
-  const detectedSkills = commonSkills.filter((skill) =>
-    lowerText.includes(skill.toLowerCase())
-  );
+  const detectedSkills =
+    commonSkills.filter((skill) =>
+      lowerText.includes(
+        skill.toLowerCase()
+      )
+    );
 
   return {
     detectedSkills,
@@ -101,8 +159,13 @@ export function parseResumeMetadata(text) {
 /**
  * Validate uploaded file type
  */
-export function getResumeFileType(fileName) {
-  const extension = fileName.split(".").pop()?.toLowerCase();
+export function getResumeFileType(
+  fileName
+) {
+  const extension = fileName
+    .split(".")
+    .pop()
+    ?.toLowerCase();
 
   if (extension === "pdf") {
     return "pdf";
@@ -112,21 +175,31 @@ export function getResumeFileType(fileName) {
     return "docx";
   }
 
-  throw new Error("Only PDF and DOCX resumes are supported");
+  throw new Error(
+    "Only PDF and DOCX resumes are supported"
+  );
 }
 
 /**
  * Complete resume processing pipeline
  */
-export async function processResume(filePath, fileName) {
-  const fileType = getResumeFileType(fileName);
+export async function processResume(
+  filePath,
+  fileName
+) {
+  const fileType =
+    getResumeFileType(fileName);
 
-  const extractedText = await extractResumeText(
-    filePath,
-    fileType
-  );
+  const extractedText =
+    await extractResumeText(
+      filePath,
+      fileType
+    );
 
-  const metadata = parseResumeMetadata(extractedText);
+  const metadata =
+    parseResumeMetadata(
+      extractedText
+    );
 
   return {
     fileType,

@@ -1,3 +1,4 @@
+
 import express from "express";
 
 import { protectRoute } from "../middleware/protectRoute.js";
@@ -18,9 +19,20 @@ import {
   submitAnswer,
   completeInterview,
   getInterviewReport,
+  getInterviewHistory,
 } from "../controllers/mockInterviewController.js";
 
 const router = express.Router();
+
+/**
+ * GET /api/mock/history
+ * Fetch user interview history
+ */
+router.get(
+  "/history",
+  protectRoute,
+  getInterviewHistory
+);
 
 /**
  * POST /api/mock/upload-resume
@@ -94,3 +106,4 @@ router.get(
 );
 
 export default router;
+

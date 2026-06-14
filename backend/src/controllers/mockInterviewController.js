@@ -3,8 +3,7 @@ import fs from "fs";
 import Resume from "../models/Resume.js";
 import MockInterview from "../models/MockInterview.js";
 import MockInterviewResponse from "../models/MockInterviewResponse.js";
-
-import { uploadResumeToCloudinary } from "../lib/cloudinary.js";
+ import { uploadResumeToCloudinary } from "../lib/cloudinary.js";
 
 import { processResume } from "../services/resumeParserService.js";
 import {
@@ -291,3 +290,37 @@ export async function getInterviewReport(
     });
   }
 }
+
+
+export async function getInterviewHistory(
+  req,
+  res
+) {
+  try {
+    const interviews =
+      await MockInterview.find({
+        user: req.user._id,
+      })
+        .select(
+          "_id interviewType overallScore status createdAt report"
+        )
+        .sort({
+          createdAt: -1,
+        });
+
+    return res.status(200).json({
+      interviews,
+    });
+  } catch (error) {
+    console.error(
+      "getInterviewHistory error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to fetch interview history",
+    });
+  }
+}
+

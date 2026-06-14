@@ -104,7 +104,12 @@ const HomePage = () => {
             Conduct technical interviews with live coding, video calls,
             and seamless collaboration — all in one place.
           </p>
-
+           <Link
+            to="/mock-interview"
+            className="px-6 py-3 border border-[#19B8AA]/30 rounded-lg text-[#19B8AA] hover:bg-[#19B8AA]/10 transition"
+               >
+            AI Mock Interview
+                   </Link>
           <div className="flex gap-4">
             <SignInButton mode="modal">
               <button className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[#19B8AA] text-black font-semibold hover:opacity-90 transition">
@@ -259,6 +264,35 @@ const HomePage = () => {
         </div>
       </section>
 
+       {/* Dedicated AI Mock Interview Section */}
+            <section className="max-w-[1400px] mx-auto px-6 pb-24">
+  <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-[#0B101B] to-[#05070D] p-10">
+    <div className="max-w-3xl">
+      <div className="inline-flex items-center gap-2 rounded-full bg-[#19B8AA]/10 px-4 py-2 text-[#19B8AA]">
+        <SparklesIcon size={16} />
+        AI Mock Interview
+      </div>
+
+      <h2 className="mt-6 text-4xl font-bold">
+        Prepare for Real Interviews with AI
+      </h2>
+
+      <p className="mt-4 text-white/70 text-lg">
+        Upload your resume, paste a job description,
+        answer AI-generated questions using voice,
+        and receive detailed interview feedback.
+      </p>
+
+      <Link
+        to="/mock-interview"
+        className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[#19B8AA] px-6 py-3 font-semibold text-black"
+      >
+        Start Mock Interview
+        <ArrowRightIcon size={18} />
+      </Link>
+    </div>
+  </div>
+</section>
       {/* FEATURES */}
       <section className="max-w-[1400px] mx-auto px-6 pb-32">
         
@@ -299,6 +333,30 @@ const HomePage = () => {
             </h3>
              
           </div>
+
+           {/* CARD 4 */}
+          <div className="p-8 rounded-xl border border-white/10 bg-white/[0.05] hover:bg-white/[0.08] transition duration-300 shadow-lg hover:shadow-[#19B8AA]/20">
+  <SparklesIcon className="mb-5 text-[#19B8AA] size-8" />
+
+  <h3 className="text-xl font-semibold mb-3">
+    AI Mock Interview
+  </h3>
+
+  <p className="text-white/60">
+    Upload your resume, provide a job description,
+    practice voice interviews, and receive
+    AI-generated feedback and scoring.
+  </p>
+
+  <Link
+    to="/mock-interview"
+    className="mt-4 inline-flex items-center gap-2 text-[#19B8AA]"
+  >
+    Try Now
+    <ArrowRightIcon size={16} />
+  </Link>
+</div>
+
 
         </div>
       </section>

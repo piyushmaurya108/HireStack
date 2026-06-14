@@ -27,8 +27,8 @@ const questionSchema = new mongoose.Schema(
     },
 
     sequenceNumber: {
-      type: Number,
-      required: true,
+    type: Number,
+    default: 1,
     },
   },
   { _id: true }
@@ -128,14 +128,20 @@ const mockInterviewSchema = new mongoose.Schema(
     },
 
     questions: {
-      type: [questionSchema],
-      default: [],
-    },
+  type: [questionSchema],
+  default: [],
+  validate: {
+    validator: (v) => v.length > 0,
+    message:
+      "Interview must contain at least one question",
+  },
+},
 
-    totalQuestions: {
-      type: Number,
-      default: 0,
-    },
+   totalQuestions: {
+  type: Number,
+  default: 0,
+  min: 1,
+},
 
     currentQuestionIndex: {
       type: Number,
