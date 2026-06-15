@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } 
 
@@ -22,9 +23,22 @@ import { useCurrentQuestion } from "../hooks/mockInterview/useCurrentQuestion";
 import { useSubmitAnswer } from "../hooks/mockInterview/useSubmitAnswer";
 import { useCompleteInterview } from "../hooks/mockInterview/useCompleteInterview";
 
-const SpeechRecognition =
-  window.SpeechRecognition ||
-  window.webkitSpeechRecognition;
+const getSpeechRecognitionConstructor =
+  () => {
+    if (
+      typeof window === "undefined"
+    ) {
+      return null;
+    }
+
+    return (
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition ||
+      globalThis.SpeechRecognition ||
+      globalThis.webkitSpeechRecognition ||
+      null
+    );
+  };
 
 const InterviewRoomPage = () => {
   const { interviewId } = useParams();
@@ -36,8 +50,8 @@ const InterviewRoomPage = () => {
   const [isRecording, setIsRecording] =
     useState(false);
 
-  const [recognition, setRecognition] =
-    useState(null);
+  const recognitionRef = useRef(null);
+  const isStartingRef = useRef(false);
 
   const {
     data,
@@ -74,6 +88,9 @@ console.log(
   totalQuestions
 );
   useEffect(() => {
+    const SpeechRecognition =
+      getSpeechRecognitionConstructor();
+
     if (!SpeechRecognition) return;
 
     const recognitionInstance =
@@ -83,50 +100,169 @@ console.log(
     recognitionInstance.interimResults = true;
     recognitionInstance.lang = "en-US";
 
+    recognitionInstance.onstart = () => {
+      isStartingRef.current = false;
+      setIsRecording(true);
+    };
+
     recognitionInstance.onresult = (
       event
     ) => {
-      let finalTranscript = "";
+      let nextTranscript = "";
 
       for (
-        let i = 0;
+        let i = event.resultIndex;
         i < event.results.length;
         i++
       ) {
-        finalTranscript +=
+        nextTranscript +=
           event.results[i][0].transcript +
           " ";
       }
 
-      setTranscript(finalTranscript);
+      setTranscript((currentTranscript) =>
+        `${currentTranscript} ${nextTranscript}`.trim()
+      );
     };
 
-    recognitionInstance.onend = () => {
+    recognitionInstance.onerror = (
+      event
+    ) => {
+      const {
+        error,
+      } = event;
+
+      if (error !== "aborted") {
+        console.error(
+          "Speech recognition error:",
+          error
+        );
+
+        toast.error(
+          error === "not-allowed"
+            ? "Microphone access was blocked"
+            : error === "audio-capture"
+              ? "No microphone was found for voice recording"
+              : error === "service-not-allowed"
+                ? "Speech recognition is blocked in this browser"
+                : "Unable to start voice recording"
+        );
+      }
+
+      isStartingRef.current = false;
       setIsRecording(false);
     };
 
-    setRecognition(recognitionInstance);
+    recognitionInstance.onend = () => {
+      isStartingRef.current = false;
+      setIsRecording(false);
+    };
+
+    recognitionRef.current =
+      recognitionInstance;
+
+    return () => {
+      recognitionInstance.onstart = null;
+      recognitionInstance.onresult = null;
+      recognitionInstance.onerror = null;
+      recognitionInstance.onend = null;
+      recognitionInstance.abort();
+
+      if (
+        recognitionRef.current ===
+        recognitionInstance
+      ) {
+        recognitionRef.current = null;
+      }
+    };
   }, []);
 
-  const startRecording = () => {
-    if (!recognition) {
+  const startRecording = async () => {
+    if (!window.isSecureContext) {
       toast.error(
-        "Speech Recognition not supported"
+        "Voice recording needs HTTPS or localhost"
       );
       return;
     }
 
-    setTranscript("");
-    setIsRecording(true);
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      toast.error(
+        "Your browser cannot access the microphone"
+      );
+      return;
+    }
 
-    recognition.start();
+    if (!recognitionRef.current) {
+      toast.error(
+        "Speech recognition is only available in supported Chromium browsers"
+      );
+      return;
+    }
+
+    if (
+      isRecording ||
+      isStartingRef.current
+    ) {
+      return;
+    }
+
+    try {
+      isStartingRef.current = true;
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            audio: true,
+          }
+        );
+
+      stream
+        .getTracks()
+        .forEach((track) =>
+          track.stop()
+        );
+
+      setTranscript("");
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error(
+        "Failed to start speech recognition:",
+        error
+      );
+
+      isStartingRef.current = false;
+      setIsRecording(false);
+
+      const errorName =
+        error?.name || error?.error;
+
+      toast.error(
+        errorName ===
+          "NotAllowedError" ||
+          errorName ===
+            "SecurityError"
+          ? "Microphone permission was denied"
+          : errorName ===
+              "NotFoundError"
+            ? "No microphone was found"
+            : errorName ===
+                "NotReadableError"
+              ? "Microphone is already being used by another app"
+              : errorName ===
+                  "InvalidStateError"
+                ? "Voice recording is already starting. Please try again."
+                : "Unable to start voice recording"
+      );
+    }
   };
 
   const stopRecording = () => {
-    if (!recognition) return;
+    if (!recognitionRef.current) return;
 
-    recognition.stop();
-    setIsRecording(false);
+    recognitionRef.current.stop();
   };
 
   const handleSubmitAnswer =
