@@ -3,6 +3,23 @@ import PDFParser from "pdf2json";
 import mammoth from "mammoth";
 
 /**
+ * Safely decode URI component to prevent URI malformed error
+ */
+function safeDecodeURIComponent(str) {
+  if (!str) return "";
+  try {
+    return decodeURIComponent(str);
+  } catch (error) {
+    try {
+      // Escape any single % characters that aren't part of a valid 2-digit hex escape sequence
+      return decodeURIComponent(str.replace(/%(?![0-9a-fA-F]{2})/g, "%25"));
+    } catch (e) {
+      return str;
+    }
+  }
+}
+
+/**
  * Extract text from PDF using pdf2json
  */
 async function extractPdfText(filePath) {
@@ -26,7 +43,7 @@ async function extractPdfText(filePath) {
             page.Texts.forEach((textItem) => {
               textItem.R.forEach((run) => {
                 text +=
-                  decodeURIComponent(run.T) +
+                  safeDecodeURIComponent(run.T) +
                   " ";
               });
             });

@@ -15,6 +15,20 @@ export const mockInterviewApi = {
     return response.data;
   },
 
+  transcribeAudio: async (formData) => {
+    const response = await axiosInstance.post(
+      "/mock/transcribe",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  },
+
   createInterview: async (data) => {
     const response = await axiosInstance.post(
       "/mock/create",

@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ENV } from "../lib/env.js";
+import fs from "fs";
 
 const genAI = new GoogleGenerativeAI(
   ENV.GEMINI_API_KEY
@@ -194,4 +195,22 @@ Return ONLY valid JSON.
 `;
 
   return generateContent(prompt);
+}
+
+/**
+ * Transcribe audio file to text using Gemini API
+ */
+export async function transcribeAudio(filePath, mimeType) {
+  const fileBuffer = fs.readFileSync(filePath);
+  const audioPart = {
+    inlineData: {
+      data: fileBuffer.toString("base64"),
+      mimeType: mimeType || "audio/webm",
+    },
+  };
+
+  const prompt = "Transcribe this audio clip exactly. If there is no speech or only noise/silence, return an empty string. Output ONLY the transcript without any extra commentary, introduction, headers, or notes.";
+
+  const result = await model.generateContent([prompt, audioPart]);
+  return result.response.text().trim();
 }
