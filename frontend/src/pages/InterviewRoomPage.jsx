@@ -22,6 +22,7 @@ import AnswerPreview from "../components/mockInterview/AnswerPreview";
 import { useCurrentQuestion } from "../hooks/mockInterview/useCurrentQuestion";
 import { useSubmitAnswer } from "../hooks/mockInterview/useSubmitAnswer";
 import { useCompleteInterview } from "../hooks/mockInterview/useCompleteInterview";
+import { mockInterviewApi } from "../api/mockInterview";
 
 const getSpeechRecognitionConstructor =
   () => {
@@ -52,6 +53,16 @@ const InterviewRoomPage = () => {
 
   const recognitionRef = useRef(null);
   const isStartingRef = useRef(false);
+
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const latestTranscriptRef = useRef("");
+  const hadSpeechErrorRef = useRef(false);
+
+  useEffect(() => {
+    latestTranscriptRef.current = transcript;
+  }, [transcript]);
 
   const {
     data,
@@ -137,25 +148,42 @@ console.log(
           "Speech recognition error:",
           error
         );
+        hadSpeechErrorRef.current = true;
 
-        toast.error(
-          error === "not-allowed"
-            ? "Microphone access was blocked"
-            : error === "audio-capture"
-              ? "No microphone was found for voice recording"
-              : error === "service-not-allowed"
-                ? "Speech recognition is blocked in this browser"
-                : "Unable to start voice recording"
-        );
+        if (error === "not-allowed" || error === "audio-capture") {
+          toast.error(
+            error === "not-allowed"
+              ? "Microphone access was blocked"
+              : "No microphone was found for voice recording"
+          );
+          // Stop MediaRecorder and release mic
+          if (
+            mediaRecorderRef.current &&
+            mediaRecorderRef.current.state !== "inactive"
+          ) {
+            mediaRecorderRef.current.stop();
+            const stream = mediaRecorderRef.current.stream;
+            if (stream) {
+              stream.getTracks().forEach((track) => track.stop());
+            }
+          }
+          setIsRecording(false);
+        } else if (error === "network" || error === "service-not-allowed") {
+          toast("Using AI transcription. Please continue speaking...", {
+            icon: "🎙️",
+            id: "speech-fallback-toast",
+          });
+        } else {
+          toast.error("Speech recognition error: " + error);
+        }
       }
 
       isStartingRef.current = false;
-      setIsRecording(false);
     };
 
     recognitionInstance.onend = () => {
       isStartingRef.current = false;
-      setIsRecording(false);
+      console.log("Speech recognition service connection ended.");
     };
 
     recognitionRef.current =
@@ -177,7 +205,37 @@ console.log(
     };
   }, []);
 
+  const handleGeminiTranscription = async (audioBlob) => {
+    try {
+      setIsTranscribing(true);
+      const toastId = toast.loading("Transcribing audio via AI...");
+
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "answer.webm");
+
+      const response = await mockInterviewApi.transcribeAudio(formData);
+
+      toast.dismiss(toastId);
+      if (response && response.transcript) {
+        setTranscript(response.transcript);
+        toast.success("Transcription complete!");
+      } else {
+        toast.error("Could not transcribe audio. You can type your answer.");
+      }
+    } catch (error) {
+      console.error("Gemini transcription failed:", error);
+      toast.dismiss();
+      toast.error("Failed to transcribe audio. Please type your answer manually.");
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   const startRecording = async () => {
+    if (isRecording || isStartingRef.current || isTranscribing) {
+      return;
+    }
+
     if (!window.isSecureContext) {
       toast.error(
         "Voice recording needs HTTPS or localhost"
@@ -195,38 +253,62 @@ console.log(
       return;
     }
 
-    if (!recognitionRef.current) {
-      toast.error(
-        "Speech recognition is only available in supported Chromium browsers"
-      );
-      return;
-    }
-
-    if (
-      isRecording ||
-      isStartingRef.current
-    ) {
-      return;
-    }
-
     try {
       isStartingRef.current = true;
+      hadSpeechErrorRef.current = false;
 
-      const stream =
-        await navigator.mediaDevices.getUserMedia(
-          {
-            audio: true,
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Setup MediaRecorder
+      let options = { mimeType: "audio/webm" };
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, options);
+      } catch (e) {
+        // Fallback for browsers that don't support audio/webm (like Safari)
+        recorder = new MediaRecorder(stream);
+      }
+
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+
+        // Delay slightly to wait for any remaining SpeechRecognition results
+        setTimeout(async () => {
+          if (
+            latestTranscriptRef.current.trim() === "" ||
+            hadSpeechErrorRef.current ||
+            !recognitionRef.current
+          ) {
+            console.log("No transcript detected, error occurred, or SpeechRecognition not supported. Using Gemini transcription...");
+            await handleGeminiTranscription(audioBlob);
           }
-        );
+        }, 500);
+      };
 
-      stream
-        .getTracks()
-        .forEach((track) =>
-          track.stop()
-        );
+      mediaRecorderRef.current = recorder;
+      recorder.start(250);
 
       setTranscript("");
-      recognitionRef.current.start();
+      setIsTranscribing(false);
+      setIsRecording(true);
+      isStartingRef.current = false;
+
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (e) {
+          console.warn("SpeechRecognition start failed:", e);
+        }
+      }
     } catch (error) {
       console.error(
         "Failed to start speech recognition:",
@@ -260,9 +342,29 @@ console.log(
   };
 
   const stopRecording = () => {
-    if (!recognitionRef.current) return;
+    // Stop MediaRecorder first
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
+      // Stop all tracks on the stream to release the mic light
+      const stream = mediaRecorderRef.current.stream;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    }
 
-    recognitionRef.current.stop();
+    // Stop Speech Recognition
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.warn("Failed to stop SpeechRecognition:", e);
+      }
+    }
+
+    setIsRecording(false);
   };
 
   const handleSubmitAnswer =
@@ -308,7 +410,8 @@ console.log(
 
   const submitLoading =
     submitAnswerMutation.isPending ||
-    completeInterviewMutation.isPending;
+    completeInterviewMutation.isPending ||
+    isTranscribing;
 
   const answerText = useMemo(
     () => transcript,
@@ -357,6 +460,7 @@ console.log(
           <div className="grid gap-6 lg:grid-cols-2">
             <SpeechToTextPanel
               transcript={transcript}
+              onTranscriptChange={setTranscript}
             />
 
             <AnswerPreview
@@ -382,7 +486,9 @@ console.log(
             className="w-full rounded-2xl bg-[#19B8AA] px-6 py-4 font-semibold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitLoading
-              ? "Processing..."
+              ? isTranscribing
+                ? "Transcribing voice response..."
+                : "Processing..."
               : "Submit Answer"}
           </button>
         </div>

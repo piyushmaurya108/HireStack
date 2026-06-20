@@ -11,7 +11,7 @@ import {
   getCurrentQuestion as getCurrentQuestionService,
 } from "../services/interviewService.js";
 
-import { evaluateAnswer } from "../services/geminiService.js";
+import { evaluateAnswer, transcribeAudio as transcribeAudioService } from "../services/geminiService.js";
 import { generateInterviewReport } from "../services/reportService.js";
 
 /**
@@ -320,6 +320,41 @@ export async function getInterviewHistory(
     return res.status(500).json({
       message:
         "Failed to fetch interview history",
+    });
+  }
+}
+
+/**
+ * Transcribe uploaded voice answer to text using Gemini
+ */
+export async function transcribeAudio(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Audio file is required",
+      });
+    }
+
+    const transcript = await transcribeAudioService(
+      req.file.path,
+      req.file.mimetype
+    );
+
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    return res.status(200).json({
+      message: "Audio transcribed successfully",
+      transcript,
+    });
+  } catch (error) {
+    console.error("transcribeAudio error:", error);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(500).json({
+      message: error.message || "Failed to transcribe audio",
     });
   }
 }

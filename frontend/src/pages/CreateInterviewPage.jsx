@@ -43,6 +43,13 @@ const CreateInterviewPage = () => {
       return;
     }
 
+    if (jobDescription.trim().length < 20) {
+      toast.error(
+        "Job description must be at least 20 characters long"
+      );
+      return;
+    }
+
     try {
       const formData = new FormData();
 
@@ -83,20 +90,17 @@ const CreateInterviewPage = () => {
         );
       }
 
-      toast.success(
-        "Interview created successfully"
-      );
-
       navigate(
         `/mock-interview/${interviewId}`
       );
     } catch (error) {
-      console.error(error);
-
-      toast.error(
-        error?.message ||
-          "Failed to create interview"
-      );
+      console.error("Error creating interview:", error);
+      // Only show toast for custom/non-Axios errors, since Axios errors are handled by mutation hooks
+      if (!error.isAxiosError && !error.response) {
+        toast.error(
+          error?.message || "An unexpected error occurred"
+        );
+      }
     }
   };
 

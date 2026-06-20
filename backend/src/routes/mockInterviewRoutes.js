@@ -4,6 +4,7 @@ import express from "express";
 import { protectRoute } from "../middleware/protectRoute.js";
 
 import uploadMiddleware from "../middleware/uploadMiddleware.js";
+import uploadAudioMiddleware from "../middleware/audioUploadMiddleware.js";
 import validateMockInterview from "../middleware/validateMockInterview.js";
 
 import {
@@ -20,6 +21,7 @@ import {
   completeInterview,
   getInterviewReport,
   getInterviewHistory,
+  transcribeAudio,
 } from "../controllers/mockInterviewController.js";
 
 const router = express.Router();
@@ -43,6 +45,17 @@ router.post(
   protectRoute,
   uploadMiddleware,
   uploadResume
+);
+
+/**
+ * POST /api/mock/transcribe
+ * Upload and transcribe voice response using Gemini
+ */
+router.post(
+  "/transcribe",
+  protectRoute,
+  uploadAudioMiddleware,
+  transcribeAudio
 );
 
 /**

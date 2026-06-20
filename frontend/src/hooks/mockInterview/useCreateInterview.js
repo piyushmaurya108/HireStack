@@ -15,8 +15,11 @@ export const useCreateInterview = () => {
     },
 
     onError: (error) => {
+      const apiErrorMsg =
+        error.response?.data?.errors?.[0]?.msg ||
+        error.response?.data?.message;
       toast.error(
-        error.response?.data?.message ||
+        apiErrorMsg ||
           "Failed to create interview"
       );
     },
