@@ -104,12 +104,7 @@ const HomePage = () => {
             Conduct technical interviews with live coding, video calls,
             and seamless collaboration — all in one place.
           </p>
-           <Link
-            to="/mock-interview"
-            className="px-6 py-3 border border-[#19B8AA]/30 rounded-lg text-[#19B8AA] hover:bg-[#19B8AA]/10 transition"
-               >
-            AI Mock Interview
-                   </Link>
+          
           <div className="flex gap-4">
             <SignInButton mode="modal">
               <button className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[#19B8AA] text-black font-semibold hover:opacity-90 transition">
@@ -117,10 +112,13 @@ const HomePage = () => {
                 <ArrowRightIcon size={18} />
               </button>
             </SignInButton>
-
-            <button className="px-6 py-3 border border-white/20 rounded-lg text-white/80 hover:bg-white/5 transition">
-              Watch Demo
-            </button>
+            <Link
+            to="/mock-interview"
+            className="px-6 py-3 border border-[#19B8AA]/30 rounded-lg text-[#19B8AA] hover:bg-[#19B8AA]/10 transition "
+               >
+            AI Mock Interview
+                   </Link>
+             
           </div>
         </div>
 
