@@ -14,6 +14,98 @@ import {
 import { evaluateAnswer, transcribeAudio as transcribeAudioService } from "../services/geminiService.js";
 import { generateInterviewReport } from "../services/reportService.js";
 
+function parseEvaluationResult(evaluationResult) {
+  const fallback = {
+    technicalScore: 0,
+    communicationScore: 0,
+    confidenceScore: 0,
+    overallScore: 0,
+    feedback:
+      typeof evaluationResult === "string"
+        ? evaluationResult
+        : "",
+    strengths: [],
+    improvements: [],
+  };
+
+  if (
+    !evaluationResult ||
+    typeof evaluationResult !== "string"
+  ) {
+    return fallback;
+  }
+
+  const cleaned = evaluationResult
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      technicalScore: normalizeScore(
+        parsed.technicalScore
+      ),
+      communicationScore: normalizeScore(
+        parsed.communicationScore
+      ),
+      confidenceScore: normalizeScore(
+        parsed.confidenceScore
+      ),
+      overallScore: normalizeScore(
+        parsed.overallScore
+      ),
+      feedback: normalizeText(parsed.feedback),
+      strengths: normalizeStringList(
+        parsed.strengths
+      ),
+      improvements: normalizeStringList(
+        parsed.improvements
+      ),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeScore(value) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return 0;
+  }
+
+  return Math.min(
+    100,
+    Math.max(0, Math.round(numericValue))
+  );
+}
+
+function normalizeText(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+}
+
+function normalizeStringList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") {
+        return item.trim();
+      }
+
+      return "";
+    })
+    .filter(Boolean);
+}
+
 /**
  * Upload resume
  * Uploads file to Cloudinary
@@ -155,29 +247,21 @@ export async function submitAnswer(req, res) {
       });
     }
 
+    const existingResponse =
+      await MockInterviewResponse.findOne({
+        interview: interview._id,
+        questionId: question._id,
+      });
+
     const evaluationResult = await evaluateAnswer({
       question: question.questionText,
       answer,
     });
 
-    let evaluation;
+    const evaluation =
+      parseEvaluationResult(evaluationResult);
 
-    try {
-      evaluation = JSON.parse(evaluationResult);
-    } catch {
-      evaluation = {
-        technicalScore: 0,
-        communicationScore: 0,
-        confidenceScore: 0,
-        overallScore: 0,
-        feedback: evaluationResult,
-        strengths: [],
-        improvements: [],
-      };
-    }
-
-    const response =
-      await MockInterviewResponse.create({
+    const responsePayload = {
         interview: interview._id,
         questionId: question._id,
         questionText: question.questionText,
@@ -191,16 +275,38 @@ export async function submitAnswer(req, res) {
           evaluation.confidenceScore || 0,
         overallScore:
           evaluation.overallScore || 0,
-        strengths: evaluation.strengths || [],
+        strengths: evaluation.strengths,
         improvements:
-          evaluation.improvements || [],
-      });
+          evaluation.improvements,
+      };
 
-    interview.completedQuestions += 1;
+    const response = existingResponse
+      ? await MockInterviewResponse.findByIdAndUpdate(
+          existingResponse._id,
+          responsePayload,
+          {
+            new: true,
+            runValidators: true,
+          }
+        )
+      : await MockInterviewResponse.create(
+          responsePayload
+        );
+
+    if (!existingResponse) {
+      interview.completedQuestions += 1;
+    }
+
+    interview.status = "in_progress";
+
+    if (!interview.startedAt) {
+      interview.startedAt = new Date();
+    }
 
     if (
       interview.currentQuestionIndex <
-      interview.totalQuestions - 1
+        interview.totalQuestions - 1 &&
+      !existingResponse
     ) {
       interview.currentQuestionIndex += 1;
     }

@@ -23,6 +23,7 @@ console.log("=== ENVIRONMENT CHECK ===")
 console.log("PORT:", ENV.PORT)
 console.log("DB_URL:", ENV.DB_URL ? "✓ Set" : "✗ Missing")
 console.log("CLIENT_URL:", ENV.CLIENT_URL)
+console.log("GEMINI_KEY:", ENV.GEMINI_API_KEY )
 console.log("========================\n")
 
 const app = express()
